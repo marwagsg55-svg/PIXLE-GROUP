@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>مجموعة بيكسل | Pixel Group</title>
     
     <!-- مكتبة Hls.js -->
@@ -18,7 +18,7 @@
     <style>
         :root {
             --bg-color: #050510;
-            --panel-bg: rgba(10, 15, 30, 0.7);
+            --panel-bg: rgba(10, 15, 30, 0.75);
             --neon-cyan: #00f3ff;
             --neon-blue: #0055ff;
             --neon-red: #ff003c;
@@ -28,12 +28,16 @@
             --plyr-video-background: #000;
         }
 
-        body {
-            margin: 0; padding: 0; display: flex; height: 100vh; flex-direction: row;
+        /* إصلاح قياسات الشاشة للموبايل والكمبيوتر باستخدام dvh الحديثة */
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%; height: 100dvh;
             background: var(--bg-color) radial-gradient(circle at 15% 50%, rgba(0, 85, 255, 0.15), transparent 25%);
             color: var(--text-main); font-family: 'Cairo', sans-serif;
-            overflow: hidden; backdrop-filter: blur(10px); transition: 0.5s;
+            overflow: hidden; backdrop-filter: blur(10px);
+            box-sizing: border-box;
         }
+
+        *, *:before, *:after { box-sizing: inherit; }
 
         /* شبكة الخلفية */
         .cyber-grid {
@@ -46,169 +50,157 @@
         }
         @keyframes gridMove { 100% { transform: perspective(500px) rotateX(60deg) translateY(30px) scale(2); } }
 
-        /* القائمة الجانبية (الشكل الأساسي) */
-        .sidebar {
-            width: 360px; height: 100%; background: var(--panel-bg); backdrop-filter: blur(12px);
-            border-left: 1px solid rgba(0, 243, 255, 0.2); box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
-            display: flex; flex-direction: column; padding: 25px; z-index: 10;
-            box-sizing: border-box; transition: 0.4s ease-in-out; order: 2;
+        /* التخطيط الأساسي للشاشات الكبيرة (الكمبيوتر) */
+        body {
+            display: flex; flex-direction: row-reverse; /* القائمة يمين والمشغل يسار */
         }
 
-        /* منطقة المشغل (الشكل الأساسي) */
+        /* القائمة الجانبية للكمبيوتر والتابلت */
+        .sidebar {
+            width: 380px; height: 100%; background: var(--panel-bg); backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(0, 243, 255, 0.2); box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+            display: flex; flex-direction: column; padding: 20px; z-index: 10;
+            transition: 0.4s ease-in-out;
+        }
+
+        /* منطقة المشغل للكمبيوتر والتابلت */
         .player-container { 
             flex-grow: 1; height: 100%; display: flex; flex-direction: column; align-items: center; 
-            justify-content: flex-start; padding: 20px 30px; box-sizing: border-box; 
-            transition: 0.4s; overflow-y: auto; order: 1; 
+            justify-content: center; padding: 20px; overflow-y: auto; 
         }
 
         /* وضع السينما */
         body.cinema-active .sidebar { width: 0; padding: 0; overflow: hidden; opacity: 0; border: none; }
-        body.cinema-active .player-container { width: 100%; max-width: 100%; padding: 20px 50px; background: rgba(0,0,0,0.9); }
+        body.cinema-active .player-container { width: 100%; max-width: 100%; padding: 20px 40px; background: rgba(0,0,0,0.95); }
         body.cinema-active .video-wrapper, body.cinema-active .quick-nav { max-width: 1400px; }
 
-        .brand { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(0, 243, 255, 0.3); flex-shrink: 0;}
-        .brand h1 { font-family: 'Orbitron', 'Cairo', sans-serif; margin: 0; font-size: 1.8rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
-        .brand .subtitle { margin-top: 8px; font-size: 0.9rem; color: #a0c4c7; line-height: 1.6; }
+        .brand { text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(0, 243, 255, 0.3); flex-shrink: 0;}
+        .brand h1 { font-family: 'Orbitron', 'Cairo', sans-serif; margin: 0; font-size: 1.6rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
+        .brand .subtitle { margin-top: 5px; font-size: 0.8rem; color: #a0c4c7; line-height: 1.4; }
         .brand .subtitle span { color: var(--neon-cyan); font-weight: bold; }
 
         .cyber-input {
             width: 100%; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--neon-cyan); flex-shrink: 0;
-            color: var(--text-main); padding: 10px 12px; border-radius: 6px; font-family: inherit;
-            margin-bottom: 15px; outline: none; transition: 0.3s; box-sizing: border-box;
+            color: var(--text-main); padding: 8px 12px; border-radius: 6px; font-family: inherit;
+            margin-bottom: 12px; outline: none; transition: 0.3s;
         }
         .cyber-input:focus { box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
         .cyber-input option { background: #050510; color: var(--neon-cyan); }
 
         .toggle-container {
             display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
-            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; margin-bottom: 15px;
+            background: rgba(0,0,0,0.4); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px;
             border: 1px solid rgba(0, 243, 255, 0.2);
         }
-        .toggle-label { font-size: 0.85rem; color: #a0c4c7; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .toggle-label { font-size: 0.8rem; color: #a0c4c7; }
+        .switch { position: relative; display: inline-block; width: 36px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
+        input:checked + .slider:before { transform: translateX(18px); }
 
         .groups-container { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
-        details { background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 243, 255, 0.15); border-radius: 6px; margin-bottom: 10px; }
-        summary { padding: 12px; cursor: pointer; font-weight: bold; background: linear-gradient(90deg, rgba(0,85,255,0.2), transparent); display: flex; justify-content: space-between; border-radius: 6px; }
+        details { background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 243, 255, 0.15); border-radius: 6px; margin-bottom: 8px; }
+        summary { padding: 10px; cursor: pointer; font-weight: bold; background: linear-gradient(90deg, rgba(0,85,255,0.2), transparent); display: flex; justify-content: space-between; border-radius: 6px; font-size: 0.95rem; }
         summary:hover { background: linear-gradient(90deg, rgba(0,243,255,0.3), transparent); }
         
         .channel-btn {
-            display: grid; grid-template-columns: 35px 1fr 25px 12px; align-items: center; gap: 10px;
-            width: 100%; padding: 8px 12px; background: transparent; color: #a0c4c7; 
+            display: grid; grid-template-columns: 32px 1fr 22px 10px; align-items: center; gap: 8px;
+            width: 100%; padding: 8px 10px; background: transparent; color: #a0c4c7; 
             border: none; border-top: 1px solid rgba(255,255,255,0.05); cursor: pointer; 
-            font-family: inherit; transition: 0.3s; box-sizing: border-box;
+            font-family: inherit; transition: 0.3s;
         }
-        .channel-btn:hover { background: rgba(0, 243, 255, 0.1); color: var(--neon-cyan); padding-right: 18px; }
+        .channel-btn:hover { background: rgba(0, 243, 255, 0.1); color: var(--neon-cyan); padding-right: 15px; }
 
-        .channel-logo { width: 35px; height: 35px; border-radius: 4px; object-fit: contain; background: #fff; padding: 2px; justify-self: center; }
-        .channel-name { text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; }
+        .channel-logo { width: 32px; height: 32px; border-radius: 4px; object-fit: contain; background: #fff; padding: 2px; justify-self: center; }
+        .channel-name { text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9rem; }
         
-        .fav-btn { background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; transition: 0.3s; padding: 0; outline: none; justify-self: center; }
+        .fav-btn { background: none; border: none; font-size: 1.1rem; color: #555; cursor: pointer; transition: 0.3s; padding: 0; outline: none; justify-self: center; }
         .fav-btn:hover { transform: scale(1.2); }
-        .fav-btn.is-fav { color: #ffd700; text-shadow: 0 0 10px #ffd700; }
+        .fav-btn.is-fav { color: #ffd700; text-shadow: 0 0 8px #ffd700; }
 
-        .status-indicator { width: 10px; height: 10px; border-radius: 50%; background: #555; transition: 0.3s; justify-self: center; }
-        .status-online { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); animation: pulse 2s infinite; }
-        .status-offline { background: var(--neon-red); box-shadow: 0 0 10px var(--neon-red); }
-        @keyframes pulse { 50% { box-shadow: 0 0 15px var(--neon-green); } }
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; background: #555; transition: 0.3s; justify-self: center; }
+        .status-online { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); animation: pulse 2s infinite; }
+        .status-offline { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); }
+        @keyframes pulse { 50% { box-shadow: 0 0 12px var(--neon-green); } }
 
-        .controls-bar { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(10,15,30,0.8); padding: 10px 20px; border: 1px solid rgba(0,243,255,0.3); border-radius: 8px; box-sizing: border-box; transition: 0.4s; flex-shrink: 0;}
-        .top-btn { background: rgba(0, 243, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 6px 15px; border-radius: 4px; cursor: pointer; font-family: inherit; font-weight: bold; transition: 0.3s; }
-        .top-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
-        .quality-selector { background: #000; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 6px 12px; border-radius: 4px; outline: none; cursor: pointer; font-family: inherit; }
+        .controls-bar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: rgba(10,15,30,0.8); padding: 8px 15px; border: 1px solid rgba(0,243,255,0.3); border-radius: 8px; flex-shrink: 0; }
+        .top-btn { background: rgba(0, 243, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 5px 12px; border-radius: 4px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.85rem; transition: 0.3s; }
+        .top-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 12px var(--neon-cyan); }
+        .quality-selector { background: #000; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 5px 10px; border-radius: 4px; outline: none; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
         
-        .video-wrapper { width: 100%; max-width: 1000px; padding: 5px; background: linear-gradient(45deg, var(--neon-blue), var(--neon-cyan)); border-radius: 12px; box-shadow: 0 0 30px rgba(0,243,255,0.2); box-sizing: border-box; transition: 0.4s; flex-shrink: 0;}
+        .video-wrapper { width: 100%; max-width: 900px; padding: 4px; background: linear-gradient(45deg, var(--neon-blue), var(--neon-cyan)); border-radius: 12px; box-shadow: 0 0 25px rgba(0,243,255,0.2); flex-shrink: 0; }
         .plyr { border-radius: 8px; }
         
-        .now-playing { width: 100%; max-width: 1000px; margin-top: 15px; font-size: 1.2rem; font-weight: bold; color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0,243,255,0.5); font-family: 'Orbitron', sans-serif; display: flex; align-items: center; gap: 15px; flex-shrink: 0;}
-        .now-playing img { width: 40px; height: 40px; border-radius: 6px; object-fit: contain; background: #fff; padding: 2px; }
+        .now-playing { width: 100%; max-width: 900px; margin-top: 12px; font-size: 1.1rem; font-weight: bold; color: var(--neon-cyan); text-shadow: 0 0 8px rgba(0,243,255,0.5); font-family: 'Orbitron', sans-serif; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .now-playing img { width: 36px; height: 36px; border-radius: 5px; object-fit: contain; background: #fff; padding: 2px; }
 
-        /* ================== شريط التنقل السريع (حُر وشفاف بالكامل) ================== */
+        /* شريط التنقل السريع الحر (الفقاعات) */
         .quick-nav {
-            width: 100%; max-width: 1000px; display: flex; gap: 20px; align-items: center;
-            padding: 25px 10px; margin-top: 5px; overflow-x: auto;
-            background: transparent; border: none; /* إزالة النافذة المستطيلة بالكامل */
-            box-sizing: border-box; transition: 0.4s; flex-shrink: 0;
-            scroll-behavior: smooth;
-            /* إخفاء السكرول بار من هذا الشريط لجعله يبدو حراً تماماً */
-            scrollbar-width: none; /* لمتصفح فايرفوكس */
-            -ms-overflow-style: none;  /* لمتصفح إيدج */
+            width: 100%; max-width: 900px; display: flex; gap: 15px; align-items: center;
+            padding: 15px 5px; margin-top: 5px; overflow-x: auto;
+            background: transparent; border: none; flex-shrink: 0;
+            scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;
         }
-        .quick-nav::-webkit-scrollbar { display: none; /* لمتصفحات كروم وسفاري */ }
+        .quick-nav::-webkit-scrollbar { display: none; }
         
         .bubble-btn {
-            width: 65px; height: 65px; border-radius: 50%;
+            width: 60px; height: 60px; border-radius: 50%;
             background: #ffffff; border: 2px solid var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.2);
             flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
             overflow: hidden; position: relative;
-            /* حركة الفقاعة الناعمة */
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .bubble-btn:hover {
-            transform: scale(1.25) translateY(-10px); /* القفزة للأعلى عند التمرير */
+            transform: scale(1.2) translateY(-6px);
             border-color: var(--neon-cyan);
-            box-shadow: 0 15px 25px rgba(0, 243, 255, 0.6), inset 0 0 15px rgba(0, 243, 255, 0.3);
+            box-shadow: 0 12px 20px rgba(0, 243, 255, 0.6), inset 0 0 10px rgba(0, 243, 255, 0.3);
             z-index: 2;
         }
-        .bubble-btn img {
-            width: 100%; height: 100%; object-fit: contain; padding: 6px; box-sizing: border-box; border-radius: 50%;
-        }
+        .bubble-btn img { width: 100%; height: 100%; object-fit: contain; padding: 5px; border-radius: 50%; }
         .bubble-fallback {
-            font-size: 0.9rem; color: #000; font-weight: bold; text-align: center; 
-            line-height: 1.2; width: 100%; padding: 0 4px; box-sizing: border-box;
+            font-size: 0.8rem; color: #000; font-weight: bold; text-align: center; 
+            line-height: 1.1; width: 100%; padding: 0 2px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        /* تخصيص السكرول بار العام للموقع */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* سكرول بار عام أنيق */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
 
-        /* ================== التجاوب الديناميكي مع الأجهزة (Responsive) ================== */
-        
-        /* التابلت (Tablet) */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .sidebar { width: 300px; padding: 15px; }
-            .player-container { padding: 15px 20px; }
-        }
-
-        /* الموبايل الجوال (Mobile) */
+        /* ================== التجاوب الديناميكي التام للموبايل (Mobile First Layout) ================== */
         @media (max-width: 768px) {
             body { 
-                flex-direction: column; /* تحويل العرض إلى عمودي */
+                flex-direction: column !important; /* تحويل التخطيط ليكون عمودياً بالكامل */
+                overflow-y: auto; /* السماح بالتمرير في الصفحة ككل للموبايل */
             }
-            /* المشغل في الأعلى */
+            
+            /* المشغل يأخذ جزءاً مرناً في الأعلى */
             .player-container { 
-                order: 1; height: 48vh; padding: 10px; 
-                flex: none; /* إيقاف التمدد */
+                width: 100%; height: auto; min-height: auto;
+                padding: 10px; flex-shrink: 0; overflow-y: visible;
             }
-            /* القائمة الجانبية في الأسفل وتأخذ باقي المساحة */
+            
+            /* القائمة تأخذ المساحة تحت المشغل وتتوسع بسلاسة */
             .sidebar { 
-                order: 2; width: 100%; height: 52vh; 
-                border-left: none; border-top: 2px solid var(--neon-cyan); 
-                padding: 15px; flex: 1;
+                width: 100%; height: auto; max-height: none;
+                border-right: none; border-top: 2px solid var(--neon-cyan); 
+                padding: 15px; flex-grow: 1; overflow-y: visible;
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
             }
-            
-            /* تصغير العناصر لتناسب الموبايل */
-            .controls-bar { padding: 8px; justify-content: space-around; margin-bottom: 10px; }
-            .top-btn, .quality-selector { font-size: 0.75rem; padding: 4px 8px; }
-            .now-playing { font-size: 1rem; margin-top: 10px; }
-            .now-playing img { width: 35px; height: 35px; }
-            
-            /* فقاعات أصغر للموبايل */
-            .quick-nav { padding: 15px 5px; gap: 12px; }
+
+            .video-wrapper { max-width: 100%; }
+            .controls-bar { max-width: 100%; padding: 6px 10px; }
+            .now-playing { max-width: 100%; font-size: 0.95rem; margin-top: 8px; }
+            .quick-nav { max-width: 100%; padding: 10px 0; gap: 10px; }
             .bubble-btn { width: 50px; height: 50px; }
-            .bubble-btn:hover { transform: scale(1.15) translateY(-5px); } /* قفزة أخف للموبايل */
-            .bubble-fallback { font-size: 0.75rem; }
             
-            /* في وضع السينما على الموبايل، المشغل يأخذ كل الشاشة */
-            body.cinema-active .player-container { height: 100vh; padding: 10px; }
+            /* في وضع السينما على الموبايل، المشغل يملأ الشاشة */
+            body.cinema-active .player-container { height: 100dvh; justify-content: center; }
+            body.cinema-active .sidebar { display: none; }
         }
     </style>
 </head>
@@ -216,7 +208,7 @@
 
     <div class="cyber-grid"></div>
 
-    <!-- القائمة الجانبية (تصميم ديناميكي) -->
+    <!-- القائمة الجانبية -->
     <div class="sidebar">
         <div class="brand">
             <h1>مجموعة بيكسل</h1>
@@ -240,7 +232,7 @@
         <input type="text" id="search-box" class="cyber-input" placeholder="بحث سريع عن قناة..." oninput="filterChannels()">
 
         <div class="groups-container" id="groups-list">
-            <div style="color: var(--neon-cyan); text-align: center; margin-top: 50px;">جاري تهيئة النظام...</div>
+            <div style="color: var(--neon-cyan); text-align: center; margin-top: 30px;">جاري تهيئة النظام...</div>
         </div>
     </div>
 
@@ -249,7 +241,7 @@
         <div class="controls-bar">
             <button class="top-btn" onclick="toggleCinemaMode()">وضع السينما 🍿</button>
             <div>
-                <label style="font-size: 0.85rem; color: var(--neon-cyan); margin-left: 5px;">الدقة:</label>
+                <label style="font-size: 0.8rem; color: var(--neon-cyan); margin-left: 4px;">الدقة:</label>
                 <select id="quality-select" class="quality-selector" onchange="changeQuality(this.value)">
                     <option value="-1">تلقائي (Auto)</option>
                 </select>
@@ -262,7 +254,7 @@
         
         <div class="now-playing" id="now-playing-text">النظام في وضع الاستعداد</div>
         
-        <!-- شريط التنقل السريع الحُر -->
+        <!-- شريط التنقل السريع الحر -->
         <div class="quick-nav" id="quick-nav" style="display: none;"></div>
     </div>
 
@@ -315,7 +307,7 @@
         async function loadSelectedPlaylist() {
             const url = playlistSelector.value;
             localStorage.setItem('pixel_last_playlist', url);
-            groupsList.innerHTML = '<div style="color: var(--neon-cyan); text-align: center; margin-top: 50px;">جاري استيراد البيانات...</div>';
+            groupsList.innerHTML = '<div style="color: var(--neon-cyan); text-align: center; margin-top: 30px;">جاري استيراد البيانات...</div>';
             
             try {
                 const res = await fetch(url);
@@ -323,7 +315,7 @@
                 allChannelsData = parseM3U(data);
                 renderGroups(allChannelsData);
             } catch (err) {
-                groupsList.innerHTML = '<div style="color: var(--neon-red); text-align: center; margin-top: 50px;">فشل الاتصال بالخادم.</div>';
+                groupsList.innerHTML = '<div style="color: var(--neon-red); text-align: center; margin-top: 30px;">فشل الاتصال بالخادم.</div>';
             }
         }
 
@@ -367,7 +359,7 @@
 
             const details = document.createElement('details');
             details.innerHTML = `
-                <summary><span>${groupName}</span> <span style="color:#888; font-size:0.85rem;" class="count-badge">[${channelsArray.length}]</span></summary>
+                <summary><span>${groupName}</span> <span style="color:#888; font-size:0.8rem;" class="count-badge">[${channelsArray.length}]</span></summary>
                 <div class="channels-container"></div>
             `;
             const container = details.querySelector('.channels-container');
@@ -380,7 +372,7 @@
                     if (this.open && !this.dataset.loaded) {
                         this.dataset.loaded = "true";
                         populateChannels(channelsArray, container, this);
-                        updateQuickNav(channelsArray); // تحديث الفقاعات عند فتح مجلد
+                        updateQuickNav(channelsArray);
                     }
                 });
             }
@@ -415,7 +407,6 @@
             container.innerHTML = html;
         }
 
-        // ================= تحديث شريط التنقل السريع الحر =================
         function updateQuickNav(channelsArray) {
             quickNav.innerHTML = '';
             if(!channelsArray || channelsArray.length === 0) {
@@ -438,14 +429,14 @@
                         this.style.display = 'none';
                         const fallback = document.createElement('div');
                         fallback.className = 'bubble-fallback';
-                        fallback.innerText = ch.name.substring(0, 5); 
+                        fallback.innerText = ch.name.substring(0, 4); 
                         btn.appendChild(fallback);
                     };
                     btn.appendChild(img);
                 } else {
                     const fallback = document.createElement('div');
                     fallback.className = 'bubble-fallback';
-                    fallback.innerText = ch.name.substring(0, 5);
+                    fallback.innerText = ch.name.substring(0, 4);
                     btn.appendChild(fallback);
                 }
                 quickNav.appendChild(btn);
