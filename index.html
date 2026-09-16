@@ -139,7 +139,6 @@
             100% { background-position: 0% 50%; transform: scale(1); filter: blur(30px); }
         }
 
-        /* تنسيق مشغل المتصفح الأساسي */
         .video-wrapper { 
             width: 100%; 
             padding: 4px; 
@@ -361,7 +360,6 @@
             </div>
         </div>
         
-        <!-- إطار الفيديو مع المشغل الأساسي -->
         <div class="video-container-wrapper">
             <div class="ambient-glow"></div>
             <div class="video-wrapper">
@@ -420,7 +418,9 @@
         const modalError = document.getElementById('modal-error-text');
         let pendingSelectorElem = null;
 
-        // ================== PWA Service Worker ==================
+        // بروكسي احتياطي يتم تفعيله تلقائياً فقط إذا حظر المتصفح الرابط المباشر
+        const BACKUP_PROXY = "https://lucky-mountain-399achaneltv-proxy.marwagsg55.workers.dev/?url=";
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed: ', err));
@@ -459,7 +459,7 @@
                 }
 
                 const lastChannel = JSON.parse(localStorage.getItem('pixel_last_channel'));
-                if (lastChannel) playChannel(lastChannel.url, lastChannel.name, lastChannel.logo, false);
+                if (lastChannel) playChannel(lastChannel.url, lastChannel.name, lastChannel.logo, false, false);
 
                 if(myFavorites.length > 0) updateQuickNav(myFavorites);
             } catch(e) {
@@ -469,7 +469,6 @@
 
         function toggleCinemaMode() { document.body.classList.toggle('cinema-active'); }
 
-        // ================== حماية القائمة الخاصة ==================
         function checkPlaylistSecurity(selectElem) {
             const url = selectElem.value;
             const protectedUrl = "https://raw.githubusercontent.com/zwrt/IPTV/refs/heads/Files/Adult.m3u";
@@ -513,7 +512,6 @@
             if (e.key === 'Enter') confirmPasswordModal();
         });
 
-        // ================== Web Worker لتحليل M3U ==================
         const workerCode = `
             self.onmessage = function(e) {
                 const content = e.data;
@@ -632,7 +630,7 @@
                 const starChar = isFav ? '★' : '☆';
 
                 html += `
-                    <div class="channel-btn" id="${btnId}" data-url="${ch.url}" onclick="playChannel('${ch.url}', '${ch.name.replace(/'/g, "\\'")}', '${ch.logo}')">
+                    <div class="channel-btn" id="${btnId}" data-url="${ch.url}" onclick="playChannel('${ch.url}', '${ch.name.replace(/'/g, "\\'")}', '${ch.logo}', true, false)">
                         ${logoHtml}
                         <span class="channel-name">${ch.name}</span>
                         <span class="channel-status"></span>
@@ -648,7 +646,6 @@
             container.innerHTML = html;
         }
 
-        // ================== فحص القنوات اليدوي ==================
         async function startManualScan() {
             const scanBtn = document.getElementById('manual-scan-btn');
             if (scanBtn.dataset.scanning === "true") return;
@@ -686,7 +683,9 @@
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 3500);
-                    await fetch(url, { method: 'HEAD', signal: controller.signal });
+                    // فحص ذكي: يحاول الرابط المباشر، فإن فشل يفحص عبر الوسيط
+                    const checkUrl = url.startsWith('http://') ? (BACKUP_PROXY + encodeURIComponent(url)) : url;
+                    await fetch(checkUrl, { method: 'HEAD', signal: controller.signal });
                     clearTimeout(timeoutId);
                     if (statusSpan) statusSpan.innerText = "✅";
                     onlineCount++;
@@ -795,13 +794,20 @@
             return 'native';
         }
 
-        // ================== محرك المشغل الأساسي للمتصفح ==================
-        function playChannel(url, name, logoUrl, autoPlay = true) {
+        // ================== محرك التشغيل الذكي (مباشر مع تحويل تلقائي عند الحظر) ==================
+        function playChannel(url, name, logoUrl, autoPlay = true, isFallback = false) {
             try {
                 localStorage.setItem('pixel_last_channel', JSON.stringify({ url, name, logo: logoUrl }));
                 const logoDisplay = (logoUrl && logoUrl !== 'undefined') ? `<img src="${logoUrl}" onerror="this.style.display='none'">` : '';
                 
-                nowPlaying.innerHTML = `${logoDisplay} <span>جاري الاتصال... ${name}</span>`;
+                // الرابط المستخدم: مباشر، أو عبر الوسيط إذا تم الحظر
+                const finalUrl = isFallback ? (BACKUP_PROXY + encodeURIComponent(url)) : url;
+
+                if (isFallback) {
+                    nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-cyan);">تم تجاوز حظر المتصفح... ${name}</span>`;
+                } else {
+                    nowPlaying.innerHTML = `${logoDisplay} <span>جاري الاتصال... ${name}</span>`;
+                }
 
                 destroyAllPlayers();
                 const streamType = getStreamType(url);
@@ -815,7 +821,7 @@
 
                 if (streamType === 'hls' && Hls.isSupported()) {
                     hlsInstance = new Hls({ maxMaxBufferLength: 30, enableWorker: true });
-                    hlsInstance.loadSource(url);
+                    hlsInstance.loadSource(finalUrl);
                     hlsInstance.attachMedia(video);
                     
                     hlsInstance.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
@@ -831,38 +837,55 @@
 
                     hlsInstance.on(Hls.Events.ERROR, (e, data) => { 
                         if (data.fatal) {
-                            nowPlaying.innerHTML = "⚠️ عذراً، البث متوقف أو غير متوفر حالياً.";
+                            // إذا فشل البث المباشر لأول مرة، حوّله تلقائياً لتجاوز حظر المتصفح
+                            if (!isFallback) {
+                                playChannel(url, name, logoUrl, autoPlay, true);
+                            } else {
+                                nowPlaying.innerHTML = "⚠️ عذراً، البث متوقف أو غير متوفر حالياً.";
+                            }
                         } 
                     });
 
                 } else if (streamType === 'dash' && typeof dashjs !== 'undefined') {
                     dashInstance = dashjs.MediaPlayer().create();
-                    dashInstance.initialize(video, url, autoPlay);
+                    dashInstance.initialize(video, finalUrl, autoPlay);
                     dashInstance.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
-                        nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-green);">DASH البث: ${name}</span>`;
+                        nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-green);">DASH: ${name}</span>`;
                     });
                     dashInstance.on(dashjs.MediaPlayer.events.ERROR, () => {
-                        nowPlaying.innerHTML = "⚠️ فشل تشغيل قناة DASH.";
+                        if (!isFallback) {
+                            playChannel(url, name, logoUrl, autoPlay, true);
+                        } else {
+                            nowPlaying.innerHTML = "⚠️ فشل تشغيل قناة DASH.";
+                        }
                     });
 
                 } else if (streamType === 'ts' && typeof mpegts !== 'undefined' && mpegts.getFeatureList().mseLivePlayback) {
-                    tsInstance = mpegts.createPlayer({ type: 'mse', isLive: true, url: url });
+                    tsInstance = mpegts.createPlayer({ type: 'mse', isLive: true, url: finalUrl });
                     tsInstance.attachMediaElement(video);
                     tsInstance.load();
                     if(autoPlay) attemptPlay();
-                    nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-blue);">TS البث: ${name}</span>`;
+                    nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-blue);">TS: ${name}</span>`;
                     
                     tsInstance.on(mpegts.Events.ERROR, () => {
-                        nowPlaying.innerHTML = "⚠️ فشل تشغيل قناة TS.";
+                        if (!isFallback) {
+                            playChannel(url, name, logoUrl, autoPlay, true);
+                        } else {
+                            nowPlaying.innerHTML = "⚠️ فشل تشغيل قناة TS.";
+                        }
                     });
 
                 } else {
-                    video.src = url;
+                    video.src = finalUrl;
                     nowPlaying.innerHTML = `${logoDisplay} <span>جاري عرض: ${name}</span>`;
                     if(autoPlay) attemptPlay();
                     
                     video.onerror = () => {
-                        nowPlaying.innerHTML = "⚠️ عذراً، تعذر تشغيل القناة.";
+                        if (!isFallback) {
+                            playChannel(url, name, logoUrl, autoPlay, true);
+                        } else {
+                            nowPlaying.innerHTML = "⚠️ عذراً، تعذر تشغيل القناة.";
+                        }
                     };
                 }
             } catch (err) {
