@@ -12,14 +12,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3076/3076772.png">
 
-    <!-- مكتبات المشغل الشاملة -->
+    <!-- مكتبات محركات البث المباشر -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mpegts.js@latest/dist/mpegts.min.js"></script>
-    
-    <!-- مكتبة Plyr للمشغل الاحترافي -->
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     
     <!-- خطوط جوجل -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
@@ -143,8 +139,28 @@
             100% { background-position: 0% 50%; transform: scale(1); filter: blur(30px); }
         }
 
-        .video-wrapper { width: 100%; padding: 4px; background: linear-gradient(45deg, var(--neon-blue), var(--neon-cyan)); border-radius: 12px; box-shadow: 0 0 25px rgba(0,243,255,0.2); }
-        .plyr { border-radius: 8px; }
+        /* تنسيق مشغل المتصفح الأساسي */
+        .video-wrapper { 
+            width: 100%; 
+            padding: 4px; 
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-cyan)); 
+            border-radius: 12px; 
+            box-shadow: 0 0 25px rgba(0,243,255,0.2); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000;
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            height: auto;
+            max-height: 65vh;
+            display: block;
+            border-radius: 8px;
+            background: #000;
+            outline: none;
+        }
         
         .now-playing { width: 100%; max-width: 900px; margin-top: 12px; font-size: 1.1rem; font-weight: bold; color: var(--neon-cyan); text-shadow: 0 0 8px rgba(0,243,255,0.5); font-family: 'Orbitron', sans-serif; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
         .now-playing img { width: 36px; height: 36px; border-radius: 5px; object-fit: contain; background: #fff; padding: 2px; }
@@ -161,7 +177,6 @@
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
 
-        /* نافذة كلمة السر المخصصة (Custom Cyber Modal) */
         .cyber-modal-overlay {
             position: fixed;
             inset: 0;
@@ -303,7 +318,6 @@
 
     <div class="cyber-grid"></div>
 
-    <!-- نافذة إدخال كلمة السر التفاعلية المدمجة -->
     <div class="cyber-modal-overlay" id="password-modal">
         <div class="cyber-modal" id="modal-box">
             <div class="cyber-modal-icon">🔒</div>
@@ -347,7 +361,7 @@
             </div>
         </div>
         
-        <!-- إطار الفيديو والإضاءة المحيطة -->
+        <!-- إطار الفيديو مع المشغل الأساسي -->
         <div class="video-container-wrapper">
             <div class="ambient-glow"></div>
             <div class="video-wrapper">
@@ -371,7 +385,6 @@
             <div class="subtitle">برمجة وتصميم:<br><span>جمال الحسن</span></div>
         </div>
 
-        <!-- قائمة اختيار القوائم -->
         <select id="playlist-selector" class="cyber-input" onchange="checkPlaylistSecurity(this)">
             <option value="https://iptv-org.github.io/iptv/languages/ara.m3u">القنوات العربية (الافتراضية)</option>
             <option value="https://iptv-org.github.io/iptv/index.category.m3u">القائمة العالمية (حسب التصنيف)</option>
@@ -401,18 +414,11 @@
         const playlistSelector = document.getElementById('playlist-selector');
         const quickNav = document.getElementById('quick-nav');
         
-        // عناصر نافذة كلمة السر
         const passwordModal = document.getElementById('password-modal');
         const modalBox = document.getElementById('modal-box');
         const modalInput = document.getElementById('modal-password-input');
         const modalError = document.getElementById('modal-error-text');
         let pendingSelectorElem = null;
-
-        const player = new Plyr(video, {
-            controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
-            settings: ['captions', 'quality', 'speed'],
-            i18n: { speed: 'السرعة', normal: 'طبيعي', play: 'تشغيل', pause: 'إيقاف', pip: 'صورة مصغرة' }
-        });
 
         // ================== PWA Service Worker ==================
         if ('serviceWorker' in navigator) {
@@ -453,7 +459,7 @@
                 }
 
                 const lastChannel = JSON.parse(localStorage.getItem('pixel_last_channel'));
-                if (lastChannel) playChannel(lastChannel.url, lastChannel.name, lastChannel.logo, false, false);
+                if (lastChannel) playChannel(lastChannel.url, lastChannel.name, lastChannel.logo, false);
 
                 if(myFavorites.length > 0) updateQuickNav(myFavorites);
             } catch(e) {
@@ -463,7 +469,7 @@
 
         function toggleCinemaMode() { document.body.classList.toggle('cinema-active'); }
 
-        // ================== نافذة كلمة السر التفاعلية ==================
+        // ================== حماية القائمة الخاصة ==================
         function checkPlaylistSecurity(selectElem) {
             const url = selectElem.value;
             const protectedUrl = "https://raw.githubusercontent.com/zwrt/IPTV/refs/heads/Files/Adult.m3u";
@@ -481,7 +487,7 @@
 
         function confirmPasswordModal() {
             const entered = modalInput.value.trim();
-            const correctPassword = "1234"; // كلمة السر (يمكنك تغييرها من هنا)
+            const correctPassword = "1234";
 
             if (entered === correctPassword) {
                 passwordModal.classList.remove('active');
@@ -503,12 +509,11 @@
             }
         }
 
-        // دعم الضغط على مفتاح Enter في خانة كلمة السر
         modalInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') confirmPasswordModal();
         });
 
-        // ================== الويب ووركر (Web Worker) لتحليل ملفات M3U ==================
+        // ================== Web Worker لتحليل M3U ==================
         const workerCode = `
             self.onmessage = function(e) {
                 const content = e.data;
@@ -669,7 +674,6 @@
             scanBtn.innerText = "جاري... ⏳";
             scanBtn.style.opacity = "0.7";
 
-            const CLOUDFLARE_PROXY = "https://lucky-mountain-399achaneltv-proxy.marwagsg55.workers.dev/?url=";
             let onlineCount = 0;
             let offlineCount = 0;
 
@@ -682,7 +686,7 @@
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 3500);
-                    await fetch(CLOUDFLARE_PROXY + encodeURIComponent(url), { method: 'HEAD', signal: controller.signal });
+                    await fetch(url, { method: 'HEAD', signal: controller.signal });
                     clearTimeout(timeoutId);
                     if (statusSpan) statusSpan.innerText = "✅";
                     onlineCount++;
@@ -791,19 +795,13 @@
             return 'native';
         }
 
-        function playChannel(url, name, logoUrl, autoPlay = true, useProxy = false) {
+        // ================== محرك المشغل الأساسي للمتصفح ==================
+        function playChannel(url, name, logoUrl, autoPlay = true) {
             try {
                 localStorage.setItem('pixel_last_channel', JSON.stringify({ url, name, logo: logoUrl }));
                 const logoDisplay = (logoUrl && logoUrl !== 'undefined') ? `<img src="${logoUrl}" onerror="this.style.display='none'">` : '';
                 
-                const CLOUDFLARE_PROXY = "https://lucky-mountain-399achaneltv-proxy.marwagsg55.workers.dev/?url=";
-                const finalUrl = useProxy ? `${CLOUDFLARE_PROXY}${encodeURIComponent(url)}` : url;
-                
-                if(useProxy) {
-                    nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-red);">جاري التخطّي عبر البروكسي... ${name}</span>`;
-                } else {
-                    nowPlaying.innerHTML = `${logoDisplay} <span>جاري الاتصال... ${name}</span>`;
-                }
+                nowPlaying.innerHTML = `${logoDisplay} <span>جاري الاتصال... ${name}</span>`;
 
                 destroyAllPlayers();
                 const streamType = getStreamType(url);
@@ -817,7 +815,7 @@
 
                 if (streamType === 'hls' && Hls.isSupported()) {
                     hlsInstance = new Hls({ maxMaxBufferLength: 30, enableWorker: true });
-                    hlsInstance.loadSource(finalUrl);
+                    hlsInstance.loadSource(url);
                     hlsInstance.attachMedia(video);
                     
                     hlsInstance.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
@@ -833,25 +831,38 @@
 
                     hlsInstance.on(Hls.Events.ERROR, (e, data) => { 
                         if (data.fatal) {
-                            if (!useProxy) {
-                                playChannel(url, name, logoUrl, autoPlay, true);
-                            } else {
-                                nowPlaying.innerHTML = "⚠️ عذراً، البث متوقف أو غير متوفر حالياً.";
-                            }
+                            nowPlaying.innerHTML = "⚠️ عذراً، البث متوقف أو غير متوفر حالياً.";
                         } 
                     });
 
+                } else if (streamType === 'dash' && typeof dashjs !== 'undefined') {
+                    dashInstance = dashjs.MediaPlayer().create();
+                    dashInstance.initialize(video, url, autoPlay);
+                    dashInstance.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
+                        nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-green);">DASH البث: ${name}</span>`;
+                    });
+                    dashInstance.on(dashjs.MediaPlayer.events.ERROR, () => {
+                        nowPlaying.innerHTML = "⚠️ فشل تشغيل قناة DASH.";
+                    });
+
+                } else if (streamType === 'ts' && typeof mpegts !== 'undefined' && mpegts.getFeatureList().mseLivePlayback) {
+                    tsInstance = mpegts.createPlayer({ type: 'mse', isLive: true, url: url });
+                    tsInstance.attachMediaElement(video);
+                    tsInstance.load();
+                    if(autoPlay) attemptPlay();
+                    nowPlaying.innerHTML = `${logoDisplay} <span style="color:var(--neon-blue);">TS البث: ${name}</span>`;
+                    
+                    tsInstance.on(mpegts.Events.ERROR, () => {
+                        nowPlaying.innerHTML = "⚠️ فشل تشغيل قناة TS.";
+                    });
+
                 } else {
-                    video.src = finalUrl;
+                    video.src = url;
                     nowPlaying.innerHTML = `${logoDisplay} <span>جاري عرض: ${name}</span>`;
                     if(autoPlay) attemptPlay();
                     
                     video.onerror = () => {
-                        if(!useProxy) {
-                            playChannel(url, name, logoUrl, autoPlay, true);
-                        } else {
-                            nowPlaying.innerHTML = "⚠️ عذراً، تعذر تشغيل القناة.";
-                        }
+                        nowPlaying.innerHTML = "⚠️ عذراً، تعذر تشغيل القناة.";
                     };
                 }
             } catch (err) {
